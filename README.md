@@ -5,3 +5,5 @@ It is written entirely in python. To start off, import the conda environment. An
 
 ## Demo
 ![](demo.mp4)
+
+https://github.com/yanhwee/nlb-seatings/raw/main/demo.mp4
