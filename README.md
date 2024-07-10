@@ -7,3 +7,5 @@ It is written entirely in python. To start off, import the conda environment. An
 ![](demo.mp4)
 
 https://github.com/yanhwee/nlb-seatings/raw/main/demo.mp4
+
+https://raw.githubusercontent.com/yanhwee/nlb-seatings/main/demo.mp4
