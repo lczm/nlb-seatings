@@ -1,0 +1,9 @@
+name: temp3.11
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - requests
+  - more-itertools
+  - tqdm
+prefix: /opt/homebrew/Caskroom/miniconda/base/envs/temp3.11
