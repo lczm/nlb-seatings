@@ -48,9 +48,9 @@ def range_generic(start, end, step):
         partial(gt, end),
         accumulate(repeat(step), initial=start))
 
-def json_get_branch_props(data) -> Tuple[Iterable[int], Iterable[str]]:
+def json_get_available_branch_props(data) -> Tuple[Iterable[int], Iterable[str]]:
     data = data['settings']['menus']['branchMenus']
-    attrs = compose(lambda f: map(f, data), itemgetter)
+    attrs = compose(lambda f: map(f, filter(compose(bool, itemgetter('areas')), data)), itemgetter)
     branch_ids = attrs('id')
     branch_names = attrs('name')
     return branch_ids, branch_names
@@ -177,7 +177,8 @@ def print_branches(branch_ids: Iterable[int], branch_names: Iterable[str]):
 def print_seat_availabilities(
         start_time: datetime, end_time: datetime,
         seat_availabilities: Iterable[Tuple[Tuple[str, str], Iterable[bool]]],
-        available_symbol='.', not_available_symbol='#', unknown_symbol=' '):
+        available_symbol='.', not_available_symbol='#', unknown_symbol=' ',
+        time_header_interval=30):
     try:
         area_seat_names, availabilities = unzip(seat_availabilities)
     except ValueError: # If can't unzip, means no data
@@ -195,12 +196,13 @@ def print_seat_availabilities(
             partial(chain, [unknown_symbol] * align),
             partial(map, symbol)),
         availabilities)
-    print(' ' * name_pad, end=' |')
     start_time = datetime(start_time.year, start_time.month, start_time.day, start_time.hour)
-    for time in range_generic(start_time, end_time, timedelta(hours=1)):
-        print(time.strftime('%I%p'), end='|')
-    print()
-    for seat_name, seat_availability in zip(names, availabilities):
+    for i, (seat_name, seat_availability) in enumerate(zip(names, availabilities)):
+        if i % time_header_interval == 0:
+            print(' ' * name_pad, end=' |')
+            for time in range_generic(start_time, end_time, timedelta(hours=1)):
+                print(time.strftime('%I%p'), end='|')
+            print()
         print(seat_name, end=' |')
         for symbols in seat_availability:
             print(''.join(symbols), end='|')
@@ -210,13 +212,13 @@ def main():
     print('Get library metadata...')
     account_info = api_get_account_info()
     print('Found library branches:')
-    branch_ids, branch_names = json_get_branch_props(account_info)
+    branch_ids, branch_names = json_get_available_branch_props(account_info)
     print_branches(branch_ids, branch_names)
     branch_id = int(input('Select a library branch ID: '))
     tomorrow = False
     if datetime.now().hour >= 12:
-        tomorrow = input('(Past noon) Get tomorrow\'s seat availability instead? (t/f): ')
-        tomorrow = True if tomorrow.lower() == 't' else False
+        tomorrow = input('Seat availability for tomorrow is available. Retrieve them instead? (y/n): ')
+        tomorrow = True if tomorrow.lower() == 'y' else False
     print('Getting seat availabilities...')
     start_time, end_time, seat_availabilities = get_seat_availabilities_today(account_info, branch_id, tomorrow=tomorrow)
     print(f'Display seat availabilities (for {"tomorrow" if tomorrow else "today"}):')
