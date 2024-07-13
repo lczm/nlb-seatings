@@ -162,9 +162,10 @@ def get_seat_availabilities_today(
                 lambda x: (lambda seat, seat_interval: (
                     ((area, seat), decode(densify(intervals, seat_interval)))
                 ))(*x),
-                seat_intervals.items()
-            )
-        ))(*x),
+                sorted(seat_intervals.items(), key=compose(
+                    lambda x: (len(x), x),
+                    itemgetter(0)))
+            )))(*x),
         area_seat_intervals.items()))
     return start_time, end_time, seat_availabilities
 
