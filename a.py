@@ -209,6 +209,47 @@ def print_seat_availabilities(
             print(''.join(symbols), end='|')
         print()
 
+def retrieve_all(tomorrow: bool = False) -> dict:
+    account_info = api_get_account_info()
+    branch_ids, branch_names = json_get_available_branch_props(account_info)
+    
+    result = {
+        "timestamp": datetime.now().isoformat(),
+        "date": (date.today() + timedelta(days=1 if tomorrow else 0)).isoformat(),
+        "branches": []
+    }
+    
+    for branch_id, branch_name in tqdm(zip(branch_ids, branch_names), desc="Processing branches"):
+        try:
+            start_time, end_time, seat_availabilities = get_seat_availabilities_today(
+                account_info, 
+                branch_id, 
+                tomorrow=tomorrow
+            )
+            
+            # convert seat availabilities to a more JSON-friendly format
+            seats_data = []
+            for (area, seat), availability in seat_availabilities:
+                seats_data.append({
+                    "area": area,
+                    "seat": seat,
+                    "availability": list(availability)
+                })
+            
+            branch_data = {
+                "id": branch_id,
+                "name": branch_name,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "seats": seats_data
+            }
+            result["branches"].append(branch_data)
+        except Exception as e:
+            print(f"Error processing branch {branch_name}: {str(e)}")
+            continue
+    
+    return result
+
 def main():
     print('Get library metadata...')
     account_info = api_get_account_info()
@@ -224,6 +265,7 @@ def main():
     start_time, end_time, seat_availabilities = get_seat_availabilities_today(account_info, branch_id, tomorrow=tomorrow)
     print(f'Display seat availabilities (for {"tomorrow" if tomorrow else "today"}):')
     print_seat_availabilities(start_time, end_time, seat_availabilities)
+
 
 if __name__ == '__main__':
     main()
