@@ -41,7 +41,7 @@ function LibraryDetail() {
   const navigate = useNavigate();
   const [library, setLibrary] = useState<Library | null>(null);
   const [loading, setLoading] = useState(true);
-  const [libraryData, setLibraryData] = useState<LibraryData>({});
+  const [, setLibraryData] = useState<LibraryData>({});
   const [seatingData, setSeatingData] = useState<AreaSeating[]>([]);
   const [loadingSeats, setLoadingSeats] = useState(false);
   const [selectedArea, setSelectedArea] = useState<string>("");
@@ -326,7 +326,6 @@ function LibraryDetail() {
 // Library Card Component
 function LibraryCard({
   library,
-  date,
   onClick,
 }: {
   library: Library;
