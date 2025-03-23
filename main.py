@@ -31,7 +31,6 @@ SessionDep = Annotated[Session, Depends(get_session)]
 # run on start-up and every hour after
 @repeat_every(seconds=60 * 60, wait_first=True)
 async def hourly():
-    global seatings
     try:
         seatings = [
             retrieve_all(False), retrieve_all(True)
