@@ -1,6 +1,6 @@
 import asyncio
 from typing import List, Dict, Annotated
-from datetime import datetime
+import datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi_utilities import repeat_every
@@ -16,8 +16,8 @@ class Seating(SQLModel, table=True):
     area: str
     seat: str
     availability: List[bool] = Field(sa_column=Column(JSON))
-    start_time: datetime
-    end_time: datetime
+    start_time: datetime.datetime
+    end_time: datetime.datetime
 
 DATABASE_URL = "sqlite:///nlb.db"
 engine = create_engine(DATABASE_URL, echo=True)
@@ -29,15 +29,16 @@ def get_session():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 # run on start-up and every hour after
-@repeat_every(seconds=3 * 60 * 60, wait_first=True, max_repetitions=1)
+@repeat_every(seconds=3 * 60 * 60, wait_first=False, max_repetitions=2)
 async def hourly():
     # only scrape between 7am and 9pm
     current_time = datetime.datetime.now().time()
     if current_time < datetime.time(7, 0) or current_time > datetime.time(21, 0):
+        print("Problem here")
         return
 
     try:
-        seatings = [retrieve_all(False), retrieve_all[True]] if datetime.now().hour >= 12 else [retrieve_all(False)]
+        seatings = [retrieve_all(False), retrieve_all[True]] if datetime.datetime.now().hour >= 12 else [retrieve_all(False)]
 
         SQLModel.metadata.drop_all(bind=engine)
         SQLModel.metadata.create_all(engine)
@@ -54,8 +55,8 @@ async def hourly():
                             area=seat["area"],
                             seat=seat["seat"],
                             availability=seat["availability"],
-                            start_time=datetime.fromisoformat(branch["start_time"]),
-                            end_time=datetime.fromisoformat(branch["end_time"])
+                            start_time=datetime.datetime.fromisoformat(branch["start_time"]),
+                            end_time=datetime.datetime.fromisoformat(branch["end_time"])
                         )
                         session.add(db_seating)
             session.commit()
