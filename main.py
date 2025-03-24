@@ -29,7 +29,7 @@ def get_session():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 # run on start-up and every hour after
-@repeat_every(seconds=60 * 60, wait_first=True)
+@repeat_every(seconds=3 * 60 * 60, wait_first=True, time_restrictions=["07:00-22:00"])
 async def hourly():
     try:
         seatings = [retrieve_all(False), retrieve_all[True]] if datetime.now().hour >= 12 else [retrieve_all(False)]
