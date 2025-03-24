@@ -213,6 +213,11 @@ function LibraryDetail() {
     (area) => area.area === selectedArea
   );
 
+  const occupancyRate =
+    ((library.total_capacity - library.current_capacity) /
+      library.total_capacity) *
+    100;
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <button
@@ -249,17 +254,12 @@ function LibraryDetail() {
               <div
                 className="bg-blue-600 h-4 rounded-full"
                 style={{
-                  width: `${
-                    (library.current_capacity / library.total_capacity) * 100
-                  }%`,
+                  width: `${occupancyRate}%`,
                 }}
               ></div>
             </div>
             <p className="text-right text-sm mt-1">
-              {Math.round(
-                (library.current_capacity / library.total_capacity) * 100
-              )}
-              %
+              {Math.round(occupancyRate)}%
             </p>
           </div>
         </div>
@@ -333,7 +333,9 @@ function LibraryCard({
   onClick: () => void;
 }) {
   const occupancyRate =
-    (library.current_capacity / library.total_capacity) * 100;
+    ((library.total_capacity - library.current_capacity) /
+      library.total_capacity) *
+    100;
 
   // Determine color based on occupancy rate
   let statusColor = "bg-green-500";
@@ -349,8 +351,8 @@ function LibraryCard({
       <div className="p-4">
         <h3 className="font-bold text-lg mb-2">{library.name}</h3>
         <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Current: {library.current_capacity}</span>
-          <span>Total: {library.total_capacity}</span>
+          <span>Current: {library.current_capacity} units</span>
+          <span>Total: {library.total_capacity} units</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
