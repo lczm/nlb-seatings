@@ -32,9 +32,8 @@ SessionDep = Annotated[Session, Depends(get_session)]
 @repeat_every(seconds=60 * 60, wait_first=True)
 async def hourly():
     try:
-        seatings = [
-            retrieve_all(False), retrieve_all(True)
-        ]
+        seatings = [retrieve_all(False), retrieve_all[True]] if datetime.now().hour >= 12 else [retrieve_all(False)]
+
         SQLModel.metadata.drop_all(bind=engine)
         SQLModel.metadata.create_all(engine)
         with Session(engine) as session:
