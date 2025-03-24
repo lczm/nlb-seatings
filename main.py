@@ -29,7 +29,7 @@ def get_session():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 # run on start-up and every hour after
-@repeat_every(seconds=3 * 60 * 60, wait_first=False, max_repetitions=2)
+@repeat_every(seconds=1 * 60 * 60, wait_first=False, max_repetitions=2)
 async def hourly():
     # only scrape between 7am and 9pm
     current_time = datetime.datetime.now().time()
