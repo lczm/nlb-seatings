@@ -38,7 +38,7 @@ async def hourly():
         return
 
     try:
-        seatings = [retrieve_all(False), retrieve_all[True]] if datetime.datetime.now().hour >= 12 else [retrieve_all(False)]
+        seatings = [retrieve_all(True), retrieve_all(False)] if datetime.datetime.now().hour >= 12 else [retrieve_all(False)]
 
         SQLModel.metadata.drop_all(bind=engine)
         SQLModel.metadata.create_all(engine)

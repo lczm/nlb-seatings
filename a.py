@@ -268,9 +268,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    # retrieve_all(tomorrow=False)
-    # retrieve_all(tomorrow=True)
-    from pprint import pprint
-    seatings = [retrieve_all(False), retrieve_all[True]] if datetime.now().hour >= 12 else [retrieve_all(False)]
-    pprint(seatings)
+    main()
+    # from pprint import pprint
+    # seatings = [retrieve_all(True), retrieve_all(False)] if datetime.now().hour >= 12 else [retrieve_all(False)]
+    # pprint(seatings)
