@@ -31,6 +31,11 @@ SessionDep = Annotated[Session, Depends(get_session)]
 # run on start-up and every hour after
 @repeat_every(seconds=3 * 60 * 60, wait_first=True, max_repetitions=1)
 async def hourly():
+    # only scrape between 7am and 9pm
+    current_time = datetime.datetime.now().time()
+    if current_time < datetime.time(7, 0) or current_time > datetime.time(21, 0):
+        return
+
     try:
         seatings = [retrieve_all(False), retrieve_all[True]] if datetime.now().hour >= 12 else [retrieve_all(False)]
 
