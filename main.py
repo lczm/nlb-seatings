@@ -7,6 +7,7 @@ from fastapi_utilities import repeat_every
 from a import retrieve_all
 from sqlmodel import Field, Session, create_engine, SQLModel, Column, JSON, select
 import json
+import logging
 
 class Seating(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -20,7 +21,10 @@ class Seating(SQLModel, table=True):
     end_time: datetime.datetime
 
 DATABASE_URL = "sqlite:///nlb.db"
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, echo=False)
+
+# only show warnings and nothing else in the console
+logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 
 def get_session():
     with Session(engine) as session:
@@ -29,12 +33,12 @@ def get_session():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 # run on start-up and every hour after
-@repeat_every(seconds=1 * 60 * 60, wait_first=False, max_repetitions=2)
+@repeat_every(seconds=60 * 60, wait_first=False)
 async def hourly():
     # only scrape between 7am and 9pm
     current_time = datetime.datetime.now().time()
     if current_time < datetime.time(7, 0) or current_time > datetime.time(21, 0):
-        print("Problem here")
+        print("Hourly cron not at specified time")
         return
 
     try:
