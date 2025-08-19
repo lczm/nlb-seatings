@@ -3,7 +3,6 @@ from typing import List, Dict, Annotated
 import datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
-from fastapi_utilities import repeat_every
 from a import retrieve_all
 from sqlmodel import Field, Session, create_engine, SQLModel, Column, JSON, select
 import json
@@ -23,7 +22,9 @@ class Seating(SQLModel, table=True):
 DATABASE_URL = "sqlite:///nlb.db"
 engine = create_engine(DATABASE_URL, echo=False)
 
-# only show warnings and nothing else in the console
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+# only show warnings and nothing else in the console for sqlalchemy
 logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
 
 def get_session():
@@ -32,24 +33,27 @@ def get_session():
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
-# run on start-up and every hour after
-@repeat_every(seconds=60 * 60, wait_first=False)
-async def hourly():
-    # only scrape between 7am and 9pm
-    current_time = datetime.datetime.now().time()
-    if current_time < datetime.time(7, 0) or current_time > datetime.time(21, 0):
-        print("Hourly cron not at specified time")
-        return
+async def update_seating_data():
+    current_datetime = datetime.datetime.now()
 
     try:
-        seatings = [retrieve_all(True), retrieve_all(False)] if datetime.datetime.now().hour >= 12 else [retrieve_all(False)]
+        logger.info(f"Starting data update at {current_datetime}")
+        seatings = [retrieve_all(True), retrieve_all(False)] if current_datetime.hour >= 12 else [retrieve_all(False)]
+        logger.info(f"Retrieved {len(seatings)} seating dataset(s)")
 
+        logger.info("Recreating database tables...")
         SQLModel.metadata.drop_all(bind=engine)
         SQLModel.metadata.create_all(engine)
+        
+        # Insert data
+        logger.info("Inserting seating data into database...")
         with Session(engine) as session:
+            total_records = 0
             # Iterate through each date's data
             for seating in seatings:
                 date = seating["date"]
+                logger.info(f"Processing data for date: {date}")
+                
                 for branch in seating["branches"]:
                     for seat in branch["seats"]:
                         db_seating = Seating(
@@ -63,14 +67,44 @@ async def hourly():
                             end_time=datetime.datetime.fromisoformat(branch["end_time"])
                         )
                         session.add(db_seating)
+                        total_records += 1
+            
             session.commit()
+            logger.info(f"Successfully inserted {total_records} seating records at {datetime.datetime.now()}")
+            
     except Exception as e:
-        print(f"Error updating seating data: {e}")
+        logger.error(f"Error updating seating data at {datetime.datetime.now()}: {e}")
+
+async def background_task():
+    """Background task that runs every hour"""
+    logger.info("Background task started")
+    
+    while True:
+        try:
+            await update_seating_data()
+            # Wait for 1 hour (3600 seconds)
+            logger.info("Waiting 1 hour until next update...")
+            await asyncio.sleep(3600)
+        except Exception as e:
+            logger.error(f"Error in background task: {e}")
+            # Wait 5 minutes before retrying on error
+            await asyncio.sleep(300)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    asyncio.create_task(hourly())
-    yield
+    # Start the background task
+    task = asyncio.create_task(background_task())
+    logger.info("Application started - background task created")
+    
+    try:
+        yield
+    finally:
+        # Clean up the task when shutting down
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            logger.info("Background task cancelled during shutdown")
 
 app = FastAPI(lifespan=lifespan)
 
